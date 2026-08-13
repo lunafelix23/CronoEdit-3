@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import { addEdital } from "../api/editais";
+
+import Input from "../components/ui/Input";
+import TextArea from "../components/ui/TextArea";
+import Select from "../components/ui/Select";
+import Button from "../components/ui/Button";
 
 export default function NovoEdital() {
   const navigate = useNavigate();
@@ -13,6 +19,13 @@ export default function NovoEdital() {
     status: "Em andamento",
   });
 
+  const [novoEvento, setNovoEvento] = useState({
+    tipo: "",
+    data: "",
+  });
+
+  const [cronograma, setCronograma] = useState([]);
+
   function handleChange(e) {
     const { name, value } = e.target;
 
@@ -22,10 +35,56 @@ export default function NovoEdital() {
     }));
   }
 
+  function handleEventoChange(e) {
+    const { name, value } = e.target;
+
+    setNovoEvento((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  }
+
+  function adicionarEvento() {
+    if (!novoEvento.tipo || !novoEvento.data) {
+      alert("Preencha o tipo de evento e a data.");
+      return;
+    }
+
+    setCronograma((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        tipo: novoEvento.tipo,
+        data: novoEvento.data,
+      },
+    ]);
+
+    setNovoEvento({
+      tipo: "",
+      data: "",
+    });
+  }
+
+  function removerEvento(id) {
+    setCronograma((prev) =>
+      prev.filter((evento) => evento.id !== id)
+    );
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
 
-    await addEdital(form);
+    if (!form.titulo.trim()) {
+      alert("Informe o título do edital.");
+      return;
+    }
+
+    const edital = {
+      ...form,
+      cronograma,
+    };
+
+    await addEdital(edital);
 
     navigate("/editais");
   }
@@ -34,7 +93,9 @@ export default function NovoEdital() {
     <div>
       <h1>Novo Edital</h1>
 
-      <p>Cadastre um novo edital para acompanhar seus prazos.</p>
+      <p>
+        Cadastre um novo edital para acompanhar seus prazos.
+      </p>
 
       <form
         onSubmit={handleSubmit}
@@ -46,59 +107,175 @@ export default function NovoEdital() {
           marginTop: "24px",
         }}
       >
-        <input
+        <Input
+          label="Título"
           name="titulo"
           placeholder="Título do edital"
           value={form.titulo}
           onChange={handleChange}
         />
 
-        <input
+        <Input
+          label="Órgão responsável"
           name="orgao"
           placeholder="Órgão responsável"
           value={form.orgao}
           onChange={handleChange}
         />
 
-        <input
+        <Input
+          label="Link"
           name="link"
-          placeholder="Link do edital"
+          placeholder="https://..."
           value={form.link}
           onChange={handleChange}
         />
 
-        <textarea
+        <TextArea
+          label="Descrição"
           name="descricao"
-          placeholder="Descrição"
           rows={5}
           value={form.descricao}
           onChange={handleChange}
         />
 
-        <select
+        <Select
+          label="Status"
           name="status"
           value={form.status}
           onChange={handleChange}
         >
-          <option>Em andamento</option>
-          <option>Inscrições abertas</option>
-          <option>Encerrado</option>
-          <option>Arquivado</option>
-        </select>
+          <option value="Em andamento">Em andamento</option>
+          <option value="Inscrições abertas">
+            Inscrições abertas
+          </option>
+          <option value="Encerrado">Encerrado</option>
+          <option value="Arquivado">Arquivado</option>
+        </Select>
 
-        <button
-          type="submit"
+        {/* CRONOGRAMA */}
+        <div
           style={{
-            padding: "12px",
-            background: "#2563eb",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
+            marginTop: "16px",
+            padding: "20px",
+            border: "1px solid #ddd",
+            borderRadius: "10px",
           }}
         >
+          <h2 style={{ marginTop: 0 }}>
+            Cronograma
+          </h2>
+
+          <p>
+            Adicione as datas importantes deste edital.
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 180px auto",
+              gap: "12px",
+              alignItems: "end",
+            }}
+          >
+            <Input
+              label="Evento"
+              name="tipo"
+              placeholder="Ex.: Inscrições"
+              value={novoEvento.tipo}
+              onChange={handleEventoChange}
+            />
+
+            <Input
+              label="Data"
+              name="data"
+              type="date"
+              value={novoEvento.data}
+              onChange={handleEventoChange}
+            />
+
+            <Button
+              type="button"
+              onClick={adicionarEvento}
+            >
+              + Adicionar
+            </Button>
+          </div>
+
+          {cronograma.length > 0 && (
+            <div style={{ marginTop: "20px" }}>
+              <h3>Datas adicionadas</h3>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                }}
+              >
+                {cronograma.map((evento) => (
+                  <div
+                    key={evento.id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "12px",
+                      background: "#f5f5f5",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <div>
+                      <strong>{evento.tipo}</strong>
+
+                      <div
+                        style={{
+                          fontSize: "14px",
+                          marginTop: "4px",
+                        }}
+                      >
+                        {new Date(
+                          `${evento.data}T00:00:00`
+                        ).toLocaleDateString("pt-BR")}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        removerEvento(evento.id)
+                      }
+                      style={{
+                        border: "none",
+                        background: "transparent",
+                        color: "#d32f2f",
+                        cursor: "pointer",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Remover
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {cronograma.length === 0 && (
+            <p
+              style={{
+                marginTop: "16px",
+                color: "#777",
+              }}
+            >
+              Nenhuma data adicionada ao cronograma.
+            </p>
+          )}
+        </div>
+
+        <Button type="submit">
           Salvar edital
-        </button>
+        </Button>
       </form>
     </div>
   );

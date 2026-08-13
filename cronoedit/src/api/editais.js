@@ -53,7 +53,7 @@ export async function addEdital(novoEdital) {
   const edital = {
     ...novoEdital,
     id: Date.now(),
-    cronograma: [],
+    cronograma: novoEdital.cronograma || [],
   };
 
   editais.push(edital);
@@ -62,16 +62,22 @@ export async function addEdital(novoEdital) {
 
   return edital;
 }
-export async function updateEdital(editalAtualizado) {
+
+export async function updateEdital(id, dadosAtualizados) {
   const editais = carregarEditais();
 
-  const novosEditais = editais.map((edital) =>
-    edital.id === editalAtualizado.id
-      ? editalAtualizado
+  const editaisAtualizados = editais.map((edital) =>
+    edital.id === Number(id)
+      ? {
+          ...edital,
+          ...dadosAtualizados,
+        }
       : edital
   );
 
-  salvarEditais(novosEditais);
+  salvarEditais(editaisAtualizados);
 
-  return editalAtualizado;
+    return editaisAtualizados.find(
+    (edital) => edital.id === Number(id)
+  );
 }

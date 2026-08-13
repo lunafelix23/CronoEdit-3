@@ -1,18 +1,25 @@
+import { getEditais } from "./editais";
+
 export async function getEventos() {
-  return [
-    {
-      id: 1,
-      titulo: "Inscrições - Edital de exemplo",
-      edital: "Edital de exemplo",
-      data: "10/08/2026",
-      tipo: "Inscrição",
-    },
-    {
-      id: 2,
-      titulo: "Resultado preliminar",
-      edital: "Novo processo seletivo",
-      data: "25/08/2026",
-      tipo: "Resultado",
-    },
-  ];
+  const editais = await getEditais();
+
+  const eventos = [];
+
+  editais.forEach((edital) => {
+    if (!edital.cronograma || !Array.isArray(edital.cronograma)) {
+      return;
+    }
+
+    edital.cronograma.forEach((evento) => {
+      eventos.push({
+        id: `${edital.id}-${evento.id}`,
+        titulo: `${evento.tipo} - ${edital.titulo}`,
+        edital: edital.titulo,
+        data: evento.data,
+        tipo: evento.tipo,
+      });
+    });
+  });
+
+  return eventos;
 }
